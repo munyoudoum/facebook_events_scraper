@@ -4,6 +4,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from time import sleep
 
+# because facebook.com/events has one iframe inside to scrape the events, so we go the the iframe first
+
 
 def get_page_iframe(driver, link):
     driver.get(link)
@@ -86,6 +88,7 @@ def event_info(driver, link):
     }
 
 
+# scrape the upcoming events section in facebook.com/pagename/events
 def events_upcoming(driver, link=""):
     if link:
         get_page_iframe(driver, link)
@@ -98,10 +101,10 @@ def events_upcoming(driver, link=""):
         event_link = event.find_element_by_css_selector(
             "div._4dmk>a").get_attribute("href")
         all_events += [event_info(driver, event_link)]
-        # driver.switch_to.frame(driver.find_element_by_tag_name("iframe"))
     return all_events
 
 
+# scrape the recurring events section in facebook.com/pagename/events
 def events_recurring(driver, link=""):
     if link:
         get_page_iframe(driver, link)
@@ -112,7 +115,7 @@ def events_recurring(driver, link=""):
         recurring_events_card = recurring_event_id[0].find_elements_by_xpath(
             "//*[@class='_1b-a _4-u2  _4-u8']")
         for card in recurring_events_card:
-            # if there is (+3 | +4 ...) button to see more recurring events
+            # if there is (+3 | +4 ...) button, click to see more recurring events
             popup_e = card.find_elements_by_class_name('_2l4u')
             if popup_e:
                 driver.execute_script("arguments[0].click();", popup_e[0])
@@ -133,8 +136,6 @@ def events_recurring(driver, link=""):
                 else:
                     event_link = e.get_attribute("href")
                 all_events += [event_info(driver, event_link)]
-                # when open new tab, and then close tab, so needs to switch driver to current tab and also inside iframe
-                # driver.switch_to.frame(driver.find_element_by_tag_name("iframe"))
             if popup_e:
                 close_popup = driver.find_element_by_xpath(
                     "//*[@id='facebook']/body/div[8]/div[2]/div/div/div/div[1]/div/div[1]/a")
@@ -143,7 +144,7 @@ def events_recurring(driver, link=""):
 
 
 def events(driver, link):
-    # Example: link = 'https://www.facebook.com/page/events/'
+    # Example: link = 'https://www.facebook.com/pagename/events/'
     get_page_iframe(driver, link)
 
     all_events = []
@@ -152,7 +153,5 @@ def events(driver, link):
 
     all_events += events_upcoming(driver)
 
-    ## Switch back to the "default content" (that is, out of the iframes) ##
-    # driver.switch_to.default_content()
     driver.close()
     return all_events
