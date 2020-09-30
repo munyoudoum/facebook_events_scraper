@@ -4,9 +4,8 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from time import sleep
 
+
 # because facebook.com/events has one iframe inside to scrape the events, so we go the the iframe first
-
-
 def get_page_iframe(driver, link):
     driver.get(link)
     try:
@@ -23,6 +22,7 @@ def get_page_iframe(driver, link):
         print("Can't find any events in 10 seconds")
 
 
+# scrape one individual event
 def event_info(driver, link):
     # example link = https://www.facebook.com/events/3102548586466148
     main_window_handle = driver.current_window_handle
