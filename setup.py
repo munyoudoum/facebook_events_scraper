@@ -4,11 +4,11 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="facebook_events_scraper",  # Replace with your own username
-    version="0.0.1",
+    name="facebook_events_scraper",
+    version="0.0.1b1",
     author="munyoudoum",
     author_email="munyoudoum@gmail.com",
-    description="Scrape Facebook page events(recurring and upcoming), and individual event",
+    description="Scrape Facebook page events(recurring and upcoming), and individual event on new Facebook Design",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/munyoudoum/facebook_events_scraper",
