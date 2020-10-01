@@ -143,9 +143,10 @@ def events_recurring(driver, link=""):
     return all_events
 
 
-def events(driver, link):
+def events(driver, link=""):
     # Example: link = 'https://www.facebook.com/pagename/events/'
-    get_page_iframe(driver, link)
+    if link:
+        get_page_iframe(driver, link)
 
     all_events = []
 
