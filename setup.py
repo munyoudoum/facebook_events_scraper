@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="facebook_events_scraper",
-    version="0.0.1b1",
+    version="0.0.1b2",
     author="munyoudoum",
     author_email="munyoudoum@gmail.com",
     description="Scrape Facebook page events(recurring and upcoming), and individual event on new Facebook Design",
@@ -17,6 +17,9 @@ setuptools.setup(
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
+    ],
+    install_requires=[
+        'selenium>=3.141.0'
     ],
     python_requires='>=3.6',
 )

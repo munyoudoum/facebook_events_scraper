@@ -13,6 +13,7 @@ fes.login(email, password)
 fes.event_info(driver, link="")
 fes.events_recurring(driver, link="")
 fes.events_upcoming(driver, link="")
+fes.events(driver, link="")
 ```
 
 ### driver(pathToChromeDriver)
