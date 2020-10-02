@@ -5,10 +5,10 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="facebook_events_scraper",
-    version="0.0.1b2",
+    version="0.0.1b3",
     author="munyoudoum",
     author_email="munyoudoum@gmail.com",
-    description="Scrape Facebook page events(recurring and upcoming), and individual event on new Facebook Design",
+    description="Scrape Facebook page events(recurring and upcoming), and individual event on new Facebook Design using Selenium webdriver",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/munyoudoum/facebook_events_scraper",

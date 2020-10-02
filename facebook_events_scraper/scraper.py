@@ -57,8 +57,10 @@ def event_info(driver, link):
         ticket = ticket[0].get_attribute('href')
     details_bottom = driver.find_element_by_xpath(
         "//*[@id='mount_0_0']/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[1]/div[1]/div/div/div/div[last()]")
-    categories = details_bottom.find_element_by_css_selector(
-        'div.lhclo0ds').text.split('\n')
+    categories = details_bottom.find_elements_by_css_selector(
+        'div.lhclo0ds')
+    if categories:
+        categories = categories[0].text.split('\n')
     see_more = driver.find_elements_by_xpath(
         '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[1]/div[1]/div/div/div/div/span/div/div')
 

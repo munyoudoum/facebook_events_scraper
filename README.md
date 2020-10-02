@@ -28,6 +28,7 @@ fes.events(driver, link="")
 
 - If you use the package's driver, you only needs to login once because it creates selenium folder which will save the Chrome cookies, the settings, extensions, etc, and the logins done in the previous session are present here.
 - Example: `facebook_events_scraper.login("myemail@gmail.com", "mypassword")`
+  i
 
 ### event_info(driver, link="")
 
@@ -92,6 +93,8 @@ return [
 ```
 return [events_upcoming(driver, link) + events_recurring(driver, link)]
 ```
+
+- Note: All the scraping function only works when the facebook layout is the same as when the browser is maximized
 
 ## Preview
 
