@@ -1,4 +1,4 @@
-# facebook_events_scraper
+# [Obsolete] facebook_events_scraper
 
 ## Install
 
