@@ -35,22 +35,22 @@ def event_info(driver, link):
     except TimeoutException:
         print("Can't find any title of event in 10 seconds")
 
-    # find hosts (can be more than one)
-    hosts = []
-    for h in driver.find_elements_by_xpath('//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[1]/div[1]/div/div/div/div/div/div/div[2]/div/div/span/strong'):
-        hosts += [h.text]
     time = driver.find_element_by_xpath(
         "//*[@id='mount_0_0']/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[1]/div[2]/div/div[2]/div/div[1]/div/div/div[1]/h2/span").text
-    going = driver.find_element_by_xpath(
-        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[last()]/div/div/div/div[2]/div/div[1]/div[1]/span[1]').text
-    interested = driver.find_element_by_xpath(
-        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[last()]/div/div/div/div[2]/div/div[2]/div[1]/span[1]').text
     image = driver.find_elements_by_xpath(
-        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[1]/div[1]/div/div/div[2]/div/a/div/div/div/div/img')
+        "//*[@data-imgperflogname='profileCoverPhoto']")
     if image:
         image = image[0].get_attribute("src")
     location = driver.find_element_by_xpath(
         "//*[@id='mount_0_0']/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[1]/div[2]/div/div[2]/div/div[1]/div/div/div[3]/span/span").text
+    # find hosts (can be more than one)
+    hosts = []
+    for h in driver.find_elements_by_xpath('//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[1]/div[1]/div/div/div/div/div/div/div[2]/div/div/span/strong'):
+        hosts += [h.text]
+    going = driver.find_element_by_xpath(
+        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[last()]/div/div/div/div[2]/div/div[1]/div[1]/span[1]').text
+    interested = driver.find_element_by_xpath(
+        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[last()]/div/div/div/div[2]/div/div[2]/div[1]/span[1]').text
     ticket = driver.find_elements_by_xpath(
         '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[1]/div/div/div/div[2]/a')
     if ticket:
