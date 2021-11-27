@@ -3,158 +3,186 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 from time import sleep
+from dateutil import parser
+from datetime import date, timedelta
 
 
-# because facebook.com/events has one iframe inside to scrape the events, so we go the the iframe first
-def get_page_iframe(driver, link):
-    driver.get(link)
-    try:
-        iframe = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.TAG_NAME, 'iframe')))
-    except TimeoutException:
-        print("Can't find iframe in 10 seconds")
-    driver.get(iframe.get_attribute('src'))
-    try:
-        # check if there is any events, and page is loaded
-        WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CLASS_NAME, '_24er')))
-    except TimeoutException:
-        print("Can't find any events in 10 seconds")
+def time_converter(time):
+    at_count = time.count(" at")
+    today = date.today()
+    if "today" in time:
+        # TODAY AT 7:30 PM
+        time = time.replace("today", today.strftime("%B %d, %Y"))
+    elif "tomorrow" in time:
+        # TOMORROW AT 9 AM
+        time = time.replace(
+            "tomorrow", (today + timedelta(days=1)).strftime("%B %d, %Y")
+        )
+    if at_count == 1:
+        # If there is end date/time
+        # TODAY AT 9 AM – 9 PM
+        if time.count(" –") == 1:
+            sliced_date, sliced_time = time.split(" at")
+            start, end = sliced_time.split(" –")
+            start_datetime = parser.parse(sliced_date + start)
+            end_datetime = parser.parse(sliced_date + end)
+        else:
+            # MONDAY AT 8 PM
+            start_datetime = end_datetime = parser.parse(time)
+    elif at_count == 2 and time.count("–") == 1:
+        # DEC 25 AT 12 PM – DEC 26 AT 8 PM
+        start, end = time.split("–")
+        start_datetime = parser.parse(start)
+        end_datetime = parser.parse(end)
+
+    return [start_datetime, end_datetime]
 
 
 # scrape one individual event
 def event_info(driver, link):
     # example link = https://www.facebook.com/events/3102548586466148
+    event_id = link.split("/")[4]
+    link = "https://www.facebook.com/events/" + event_id
     main_window_handle = driver.current_window_handle
     driver.execute_script(f'window.open("{link}","_blank");')
     driver.switch_to.window(driver.window_handles[1])
-
     try:
-        title = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-            (By.XPATH, "//*[@id='mount_0_0']/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[1]/div[2]/div/div[2]/div/div[1]/div/div/div[2]/h2/span/span/span"))).text
+        title = (
+            WebDriverWait(driver, 5)
+            .until(
+                EC.presence_of_element_located(
+                    (
+                        By.XPATH,
+                        "//span[@class='d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j keod5gw0 nxhoafnm aigsh9s9 ns63r2gh fe6kdd0r mau55g9w c8b282yb rwim8176 m6dqt4wy h7mekvxk hnhda86s oo9gr5id hzawbc8m']",
+                    )
+                )
+            )
+            .text
+        )
     except TimeoutException:
-        print("Can't find any title of event in 10 seconds")
+        driver.close()
+        driver.switch_to.window(main_window_handle)
+        print("Can't find the event title in 5 seconds")
+        return None, None
 
+    location = driver.find_element_by_xpath(
+        "//*[@class='d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j keod5gw0 nxhoafnm aigsh9s9 d9wwppkn fe6kdd0r mau55g9w c8b282yb iv3no6db a5q79mjw g1cxx5fr b1v8xokw m9osqain hzawbc8m']"
+    ).text
     time = driver.find_element_by_xpath(
-        "//*[@id='mount_0_0']/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[1]/div[2]/div/div[2]/div/div[1]/div/div/div[1]/h2/span").text
+        "//h2[@class='gmql0nx0 l94mrbxd p1ri9a11 lzcic4wl d2edcug0 hpfvmrgz']/span[@class='d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j keod5gw0 nxhoafnm aigsh9s9 d9wwppkn fe6kdd0r mau55g9w c8b282yb iv3no6db jq4qci2q a3bd9o3v hnhda86s jdix4yx3 hzawbc8m']"
+    ).text
     image = driver.find_elements_by_xpath(
-        "//*[@data-imgperflogname='profileCoverPhoto']")
+        "//*[@data-imgperflogname='profileCoverPhoto']"
+    )
     if image:
         image = image[0].get_attribute("src")
-    location = driver.find_element_by_xpath(
-        "//*[@id='mount_0_0']/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[1]/div[2]/div/div[2]/div/div[1]/div/div/div[3]/span/span").text
     # find hosts (can be more than one)
     hosts = []
-    for h in driver.find_elements_by_xpath('//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[1]/div[1]/div/div/div/div/div/div/div[2]/div/div/span/strong'):
+    for h in driver.find_elements_by_xpath(
+        "//strong/a[@class='oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 nc684nl6 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl oo9gr5id gpro0wi8 lrazzd5p']"
+    ):
         hosts += [h.text]
-    going = driver.find_element_by_xpath(
-        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[last()]/div/div/div/div[2]/div/div[1]/div[1]/span[1]').text
-    interested = driver.find_element_by_xpath(
-        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[last()]/div/div/div/div[2]/div/div[2]/div[1]/span[1]').text
-    ticket = driver.find_elements_by_xpath(
-        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[2]/div[2]/div[1]/div/div/div/div[2]/a')
-    if ticket:
-        ticket = ticket[0].get_attribute('href')
-    details_bottom = driver.find_element_by_xpath(
-        "//*[@id='mount_0_0']/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[1]/div[1]/div/div/div/div[last()]")
-    categories = details_bottom.find_elements_by_css_selector(
-        'div.lhclo0ds')
+    categories = driver.find_elements_by_xpath(
+        "//*[@class='d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j keod5gw0 nxhoafnm aigsh9s9 d9wwppkn fe6kdd0r mau55g9w c8b282yb mdeji52x e9vueds3 j5wam9gi lrazzd5p oo9gr5id']"
+    )
     if categories:
-        categories = categories[0].text.split('\n')
+        categories = categories[0].text.split("\n")
     see_more = driver.find_elements_by_xpath(
-        '//*[@id="mount_0_0"]/div/div[1]/div[1]/div[3]/div/div/div[1]/div[1]/div[4]/div/div[1]/div/div/div[1]/div[1]/div/div/div/div/span/div/div')
+        "//div[@class='oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 nc684nl6 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl oo9gr5id gpro0wi8 lrazzd5p'][@role='button'][contains(text(),'See more')]"
+    )
 
     # if 'See More', click
     if see_more:
         driver.execute_script("arguments[0].click();", see_more[0])
-    sleep(1)
-    description = details_bottom.find_element_by_css_selector('span').text
+        sleep(1)
+    description = driver.find_element_by_xpath(
+        "//div[@class='p75sslyk']/span[@class='d2edcug0 hpfvmrgz qv66sw1b c1et5uql oi732d6d ik7dh3pa ht8s03o8 a8c37x1j keod5gw0 nxhoafnm aigsh9s9 d9wwppkn fe6kdd0r mau55g9w c8b282yb iv3no6db jq4qci2q a3bd9o3v b1v8xokw oo9gr5id']"
+    ).text
     # if see more, delete 'See Less' from description
     if see_more:
         description = description[:-9]
 
+    ticket = driver.find_elements_by_xpath("//a[@aria-label='Find Tickets']")
+    if ticket:
+        ticket = ticket[0].get_attribute("href")
+    else:
+        ticket = ""
+    start_datetime, end_datetime = time_converter(time.replace(" UTC+07", "").lower())
+    time = f"{start_datetime.strftime('%X')[:-3]} - {end_datetime.strftime('%H:%M %d/%m/%Y')}"
+    start_datetime = start_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+    end_datetime = end_datetime.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    recurring_event = driver.find_elements_by_xpath(
+        "//a[@aria-label='[object Object]']"
+    )
+    if len(recurring_event) >= 3:
+        next_event = recurring_event[-1].get_attribute("href")
+    else:
+        next_event = ""
     driver.close()
     driver.switch_to.window(main_window_handle)
-    return {
-        "hosts": hosts,
-        "title": title,
-        "time": time,
-        "description": description,
-        "location": location,
-        "ticket": ticket,
-        "link": link,
-        "image": image,
-        "interested": interested,
-        "going": going,
-        "categories": categories
-    }
+    return (
+        {
+            "_id": event_id,
+            "hosts": hosts,
+            "title": title,
+            "time": time,
+            "description": description,
+            "location": location,
+            "link": link,
+            "image": image,
+            "categories": categories,
+            "start_time": start_datetime,
+            "end_time": end_datetime,
+            "ticket": ticket,
+        },
+        next_event,
+    )
 
 
 # scrape the upcoming events section in facebook.com/pagename/events
 def events_upcoming(driver, link=""):
-    if link:
-        get_page_iframe(driver, link)
-
     all_events = []
-    upcoming_events = driver.find_elements_by_xpath(
-        "//*[@class='_4dmd _4eok uiGrid _51mz']")
+    driver.get(link)
+    sleep(2)
+    upcoming_events_sec = driver.find_elements_by_xpath(
+        "//div[@class='dati1w0a ihqw7lf3 hv4rvrfc discj3wi']"
+    )
 
-    for event in upcoming_events:
-        event_link = event.find_element_by_css_selector(
-            "div._4dmk>a").get_attribute("href")
-        all_events += [event_info(driver, event_link)]
-    return all_events
+    see_more = driver.find_elements_by_xpath(
+        "//div[@class='oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 pq6dq46d p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl n00je7tq arfg74bv qs9ysxi8 k77z8yql l9j0dhe7 abiwlrkh p8dawk7l cbu4d94t taijpn5t k4urcfbm'][@aria-label='See more']"
+    )
+    if see_more:
+        driver.execute_script("arguments[0].click();", see_more[0])
+        sleep(1)
+    if upcoming_events_sec:
+        upcoming_events = upcoming_events_sec[0].find_elements_by_css_selector(
+            "a[class='oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 nc684nl6 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl gmql0nx0 gpro0wi8 hnhda86s']"
+        )
+        if (
+            upcoming_events
+            and upcoming_events[0]
+            .find_elements_by_xpath("//*[@aria-selected='true']")[-1]
+            .text
+            == "Upcoming"
+        ):
+            # weird events layout
+            upcoming_events = upcoming_events_sec[0].find_elements_by_xpath(
+                "//div[@class='buofh1pr hv4rvrfc']/div/a[@class='oajrlxb2 g5ia77u1 qu0x051f esr5mh6w e9989ue4 r7d6kgcz rq0escxv nhd2j8a9 nc684nl6 p7hjln8o kvgmc6g5 cxmmr5t8 oygrvhab hcukyx3x jb3vyjys rz4wbd8a qt6c0cv9 a8nywdso i1ao9s8h esuyzwwr f1sip0of lzcic4wl gmql0nx0 gpro0wi8']"
+            )
+        for event in upcoming_events:
+            event_link = event.get_attribute("href")
+            if event_link[-6:] == "events":
+                break
+            info, next_event_link = event_info(driver, event_link)
+            if isinstance(info, dict):
+                all_events.append(info)
 
-
-# scrape the recurring events section in facebook.com/pagename/events
-def events_recurring(driver, link=""):
-    if link:
-        get_page_iframe(driver, link)
-
-    all_events = []
-    recurring_event_id = driver.find_elements_by_id("recurring_events_card")
-    if recurring_event_id:
-        recurring_events_card = recurring_event_id[0].find_elements_by_xpath(
-            "//*[@class='_1b-a _4-u2  _4-u8']")
-        for card in recurring_events_card:
-            # if there is (+3 | +4 ...) button, click to see more recurring events
-            popup_e = card.find_elements_by_class_name('_2l4u')
-            if popup_e:
-                driver.execute_script("arguments[0].click();", popup_e[0])
-                try:
-                    recurring_events = WebDriverWait(driver, 10).until(
-                        EC.presence_of_all_elements_located((By.XPATH, "//*[@class='_2pi4 _2rsy']")))
-                except TimeoutException:
-                    print("Can't find events in recurring events in 10 seconds")
-            else:
-                recurring_events = card.find_elements_by_class_name('_2l45')
-            for e in recurring_events:
-                if popup_e:
-                    event_link = e.find_element_by_class_name(
-                        "_62pa").get_attribute("data-hovercard")
-                    event_link = "https://www.facebook.com/events/" + \
-                        event_link.split('=')[-1] + "/"
-
-                else:
-                    event_link = e.get_attribute("href")
-                all_events += [event_info(driver, event_link)]
-            if popup_e:
-                close_popup = driver.find_element_by_xpath(
-                    "//*[@id='facebook']/body/div[8]/div[2]/div/div/div/div[1]/div/div[1]/a")
-                driver.execute_script("arguments[0].click();", close_popup)
-    return all_events
-
-
-def events(driver, link=""):
-    # Example: link = 'https://www.facebook.com/pagename/events/'
-    if link:
-        get_page_iframe(driver, link)
-
-    all_events = []
-
-    all_events += events_recurring(driver)
-
-    all_events += events_upcoming(driver)
-
-    driver.close()
+            if next_event_link:
+                for i in range(3):
+                    info, next_event_link = event_info(driver, next_event_link)
+                    if isinstance(info, dict):
+                        all_events.append(info)
+                    if not next_event_link:
+                        break
     return all_events

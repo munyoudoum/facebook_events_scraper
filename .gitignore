@@ -2,3 +2,4 @@ facebook_events_scraper/__pycache__
 facebook_events_scraper.egg-info
 dist
 build
+selenium/

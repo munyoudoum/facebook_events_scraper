@@ -1,5 +1,5 @@
 def login(driver, email, pw):
-    driver.get('https://www.facebook.com')
+    driver.get("https://www.facebook.com")
     # find the username field and enter the email example@yahoo.com.
     username = driver.find_elements_by_css_selector("input[name=email]")
     username[0].send_keys(email)
